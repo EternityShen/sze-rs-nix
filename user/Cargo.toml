@@ -1,0 +1,13 @@
+[package]
+name = "sze-rs-nix"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.43"
+aya = "0.13"
+bytemuck = { version = "1.13", features = ["derive"] }
+num_cpus = "1.17"
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+inotify = "0.11.0"

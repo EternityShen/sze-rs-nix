@@ -1,0 +1,14 @@
+{
+    "name": "SZE-RS-NIX",
+    "author": "ShenEternity",
+    "version": "1.0-release",
+    "versionCode": 20260216,
+    "features": {
+        "strict": false,
+        "pedestal": false
+    },
+    "module": "ETERNAL_CPU_SZE",
+    "state": "/data/adb/modules/ETERNAL_CPU_SZE/config/config.txt",
+    "entry": "/data/powercfg.sh",
+    "projectUrl": "https://github.com/EternityShen"
+}
