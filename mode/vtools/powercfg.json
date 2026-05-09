@@ -2,7 +2,7 @@
     "name": "SZE-RS-NIX",
     "author": "ShenEternity",
     "version": "1.0-release",
-    "versionCode": 20260216,
+    "versionCode": 20260509,
     "features": {
         "strict": false,
         "pedestal": false

@@ -8,7 +8,7 @@ use crate::{
     config::sze_config::SchedulerConfig,
     file::file_handle::{FileHander, Readable},
     logger::log_handle::LogHandle,
-    utils::utils_lib::{inotify_blockage, inotify_init},
+    utils::utils_lib::{get_top_app, inotify_blockage, inotify_init},
 };
 
 pub fn monitor_screen_status() -> bool {
@@ -21,6 +21,10 @@ pub fn monitor_screen_status() -> bool {
     output.contains("true")
 }
 
+pub fn game_is_running(game_list: Vec<String>) -> bool {
+    let top_app = get_top_app();
+    game_list.iter().any(|game| top_app.contains(game))
+}
 pub struct SzeRs {
     mode_file: FileHander<Readable>,
     inotify: inotify::Inotify,
@@ -66,4 +70,3 @@ impl SzeRs {
         }
     }
 }
-

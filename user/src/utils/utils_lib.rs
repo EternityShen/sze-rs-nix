@@ -1,19 +1,28 @@
 use core::panic;
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    fs::OpenOptions,
+    io::{BufReader, Read},
+    path::PathBuf,
+    process::Command,
+};
 
-pub fn divide_u32_vector_into_intervals_map(vec: Vec<u32>, portion: u32) -> HashMap<usize, (u32, u32)> {
+pub fn divide_u32_vector_into_intervals_map(
+    vec: Vec<u32>,
+    portion: u32,
+) -> HashMap<usize, (u32, u32)> {
     let mut intervals_map = HashMap::new();
     let vec_len = vec.len() as u32;
-    
+
     // 处理特殊情况
     if vec_len == 0 {
         panic!("向量为空");
     }
-    
+
     if portion == 0 {
         panic!(" portion 不能为0");
     }
-    
+
     // 计算基础区间大小：总长度除以部分数
     let interval_size = vec_len / portion;
     // 计算余数：总长度除以部分数的余数
@@ -26,13 +35,13 @@ pub fn divide_u32_vector_into_intervals_map(vec: Vec<u32>, portion: u32) -> Hash
         // 如果当前索引小于余数，则加上 i（因为前 remainder 个区间每个都多一个元素）
         // 否则，加上余数（因为后面的区间不再有多出的元素）
         let start = i * interval_size + if i < remainder { i } else { remainder };
-        
+
         // 计算当前区间的结束索引
         // 起始位置加上基础区间大小
         // 如果当前索引小于余数，则再加上1（因为前 remainder 个区间每个都多一个元素）
         // 最后减1得到结束索引（因为索引从0开始）
         let end = start + interval_size + if i < remainder { 1 } else { 0 } - 1;
-        
+
         // 将计算出的区间（起始值和结束值）添加到结果映射中
         intervals_map.insert(i as usize, (vec[start as usize], vec[end as usize]));
     }
@@ -40,18 +49,17 @@ pub fn divide_u32_vector_into_intervals_map(vec: Vec<u32>, portion: u32) -> Hash
     intervals_map
 }
 
-
 pub fn insertion_sort(arr: &mut Vec<u32>) {
     for i in 1..arr.len() {
         let key = arr[i];
         let mut j = i;
-        
+
         // 将比key大的元素向右移动
         while j > 0 && arr[j - 1] > key {
             arr[j] = arr[j - 1];
             j -= 1;
         }
-        
+
         arr[j] = key;
     }
 }
@@ -79,18 +87,21 @@ pub fn policy_path_insertion_sort(vec: &mut Vec<PathBuf>) {
     }
 }
 
-
 pub fn inotify_init(path: &PathBuf) -> inotify::Inotify {
     let inotify = inotify::Inotify::init().unwrap();
-    inotify.watches().add(path, inotify::WatchMask::MODIFY).unwrap();
+    inotify
+        .watches()
+        .add(path, inotify::WatchMask::MODIFY)
+        .unwrap();
     inotify
 }
 
-pub fn inotify_blockage(inotify: & mut inotify::Inotify) {
+pub fn inotify_blockage(inotify: &mut inotify::Inotify) {
     let mut buffer = [0u8; 4096];
     loop {
         match inotify.read_events(&mut buffer) {
             Ok(events) => {
+                #[allow(clippy::never_loop)]
                 for _ in events {
                     break;
                 }
@@ -106,6 +117,26 @@ pub fn inotify_blockage(inotify: & mut inotify::Inotify) {
     }
 }
 
+pub fn get_top_app() -> String {
+    let result = Command::new("sh")
+        .arg("dumpsys window | grep mCurrentFocus")
+        .output()
+        .expect("执行命令失败");
+
+    let output = String::from_utf8_lossy(&result.stdout);
+    output.trim().to_string()
+}
+
+pub fn get_game_list() -> Vec<String> {
+    let result = OpenOptions::new()
+        .read(true)
+        .open("/data/adb/modules/ETERNAL_CPU_SZE/config/game_list.txt")
+        .expect("打开文件失败");
+    let mut reader = BufReader::new(result);
+    let mut contents = String::new();
+    reader.read_to_string(&mut contents).expect("读取文件失败");
+    contents.lines().map(|line| line.to_string()).collect()
+}
 #[test]
 fn test_inotify_init() {
     let path = PathBuf::from("/home/sheneternity/Work/sze-rs-nix/debug/test.txt");
@@ -115,7 +146,6 @@ fn test_inotify_init() {
         println!("文件被修改");
     }
 }
-
 
 #[test]
 fn test_divide_u32_vector_into_intervals_map() {
@@ -129,7 +159,6 @@ fn test_divide_u32_vector_into_intervals_map() {
         println!("{}-{}", start, end);
     }
 }
-
 
 #[test]
 fn test_policy_path_insertion_sort() {

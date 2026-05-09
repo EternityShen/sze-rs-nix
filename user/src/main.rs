@@ -4,7 +4,8 @@ use sze_rs_nix::cpu_info::cpu_handle::CpuHandle;
 use sze_rs_nix::listener::load_handle::{EbpfLoadHandle, get_load_level};
 use sze_rs_nix::logger::log_handle::LogHandle;
 use sze_rs_nix::scheduler::cpu::{PolicyScheduler, policy_freq_scheduler};
-use sze_rs_nix::scheduler::sze_rs::{SzeRs, monitor_screen_status};
+use sze_rs_nix::scheduler::sze_rs::{SzeRs, game_is_running, monitor_screen_status};
+use sze_rs_nix::utils::utils_lib::get_game_list;
 
 fn main() {
     let mut sheneternity_log = LogHandle::new("./log/sheneternity.log");
@@ -26,14 +27,19 @@ fn main() {
     ebpf_log.clear();
     let mut mode_log = LogHandle::new("./log/mode.log");
     mode_log.clear();
+    let mut onf_log = LogHandle::new("./log/开关.log");
+    onf_log.clear();
     let ebpf_log_handle = Arc::new(Mutex::new(ebpf_log));
     let user_log_handle = Arc::new(Mutex::new(user_log));
     let cpu_handle = Arc::new(RwLock::new(CpuHandle::new(Arc::clone(&user_log_handle))));
     let mode_log_handle = Arc::new(Mutex::new(mode_log));
+    let onf_log_handle = Arc::new(Mutex::new(onf_log));
+    let onf_log_handle_clone = Arc::clone(&onf_log_handle);
     // Clone necessary data before moving cpu_handle
     let policy_index = cpu_handle.read().unwrap().policy_index;
     let policy_range_map = cpu_handle.read().unwrap().policy_range_map.clone();
     let on_or_off = Arc::new(Mutex::new(true));
+    let on_or_off_clone = Arc::clone(&on_or_off);
     let scheduler_config = Arc::new(RwLock::new(SchedulerConfig::new("powersave")));
     for policy_idx in 0..policy_index {
         let scheduler_config_clone = Arc::clone(&scheduler_config);
@@ -78,16 +84,49 @@ fn main() {
     let _ = std::thread::Builder::new()
         .name(format!("Eternity_Screen"))
         .spawn(move || {
+            let mut temp = false;
             loop {
                 let screen_on = monitor_screen_status();
-                if screen_on {
+                if screen_on && temp == false {
                     *on_or_off.lock().unwrap() = true;
-                } else {
+                    temp = true;
+                    onf_log_handle
+                        .lock()
+                        .unwrap()
+                        .info("屏幕已开启".to_string());
+                }
+                if !screen_on && temp == true {
                     *on_or_off.lock().unwrap() = false;
+                    temp = false;
+                    onf_log_handle
+                        .lock()
+                        .unwrap()
+                        .info("屏幕已关闭".to_string());
                 }
                 std::thread::sleep(std::time::Duration::from_secs(5));
             }
         });
+
+    let _ = std::thread::spawn(move || {
+        let game_list = get_game_list();
+        loop {
+            if game_is_running(game_list.clone()) && *on_or_off_clone.lock().unwrap() == false {
+                *on_or_off_clone.lock().unwrap() = false;
+                onf_log_handle_clone
+                    .lock()
+                    .unwrap()
+                    .info("游戏正在运行".to_string());
+            }
+            if !game_is_running(game_list.clone()) && *on_or_off_clone.lock().unwrap() == false {
+                *on_or_off_clone.lock().unwrap() = true;
+                onf_log_handle_clone
+                    .lock()
+                    .unwrap()
+                    .info("游戏未运行".to_string());
+            }
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        }
+    });
 
     loop {
         sze.sze_rs_scheduler();

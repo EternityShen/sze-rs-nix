@@ -12,10 +12,10 @@ impl<'a> PolicyScheduler<'a> {
     pub fn get_freq_range(&self, _policy_index: u32, loadlevel: &LoadLevel) -> (u32, u32) {
         let policy = &self.policy;
         match loadlevel {
-            LoadLevel::Low => policy.freq_range_map.get(&0).unwrap().clone(),
-            LoadLevel::Mid => policy.freq_range_map.get(&1).unwrap().clone(),
-            LoadLevel::High => policy.freq_range_map.get(&2).unwrap().clone(),
-            LoadLevel::Max => policy.freq_range_map.get(&3).unwrap().clone(),
+            LoadLevel::Low => *policy.freq_range_map.get(&0).unwrap(),
+            LoadLevel::Mid => *policy.freq_range_map.get(&1).unwrap(),
+            LoadLevel::High => *policy.freq_range_map.get(&2).unwrap(),
+            LoadLevel::Max => *policy.freq_range_map.get(&3).unwrap(),
         }
     }
 
@@ -25,7 +25,12 @@ impl<'a> PolicyScheduler<'a> {
     }
 }
 
-pub fn policy_freq_scheduler(policy_index: u32, load_level: &LoadLevel, policy_scheduler: &mut PolicyScheduler) {
+pub fn policy_freq_scheduler(
+    policy_index: u32,
+    load_level: &LoadLevel,
+    policy_scheduler: &mut PolicyScheduler,
+) {
     let freq_range = policy_scheduler.get_freq_range(policy_index, load_level);
     policy_scheduler.set_freq(policy_index, freq_range);
 }
+
